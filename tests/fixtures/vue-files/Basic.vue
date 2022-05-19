@@ -1,5 +1,10 @@
 <template functional>
   <div>
+    <h1>{{ $t('yes') }}</h1>
+    <h1>{{ $t('common:yes') }}</h1>
+    <h1>{{ $t('common:no') }}</h1>
+    <h1>{{ $t('billing:unknown') }}</h1>
+    <h1>{{ $t('billing:billing') }}</h1>
     <h1>{{ $t('header.title') }}</h1>
     <h1>{{ $tm('header.title2') }}</h1>
     <p>{{ $t("content.paragraph.p_1", { count: 'two' }) }}</p>

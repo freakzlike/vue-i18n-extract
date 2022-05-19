@@ -39,9 +39,26 @@ export function readLanguageFiles (src: string): SimpleFile[] {
   });
 }
 
+function getLanguageFromFile (fileName: string): string {
+  if (fileName.endsWith('common.json') || fileName.endsWith('billing.json')) {
+    const split = fileName.split('/')
+    return split[split.length - 2]
+  }
+
+  return fileName.substring(fileName.lastIndexOf('/') + 1, fileName.lastIndexOf('.'));
+}
+function getKeyForFile (fileName: string, key): string {
+  if (fileName.endsWith('common.json') || fileName.endsWith('billing.json')) {
+    const context = fileName.substring(fileName.lastIndexOf('/') + 1, fileName.lastIndexOf('.'));
+    return [context, key].join(':')
+  }
+
+  return key
+}
+
 export function extractI18NLanguageFromLanguageFiles (languageFiles: SimpleFile[], dot: DotObject.Dot = Dot): I18NLanguage {
   return languageFiles.reduce((accumulator, file) => {
-    const language = file.fileName.substring(file.fileName.lastIndexOf('/') + 1, file.fileName.lastIndexOf('.'));
+    const language = getLanguageFromFile(file.fileName);
 
     if (!accumulator[language]) {
       accumulator[language] = [];
@@ -50,7 +67,7 @@ export function extractI18NLanguageFromLanguageFiles (languageFiles: SimpleFile[
     const flattenedObject = dot.dot(JSON.parse(file.content));
     Object.keys(flattenedObject).forEach((key) => {
       accumulator[language].push({
-        path: key,
+        path: getKeyForFile(file.fileName, key),
         file: file.fileName,
       });
     });
@@ -59,13 +76,28 @@ export function extractI18NLanguageFromLanguageFiles (languageFiles: SimpleFile[
   }, {});
 }
 
+function setKeyForFile (fileName: string, item: I18NItem): string | undefined {
+  const fileLanguage = getLanguageFromFile(fileName)
+
+  if (!item.language || item.language === fileLanguage) {
+    const [ctx, key] = item.path.includes(':') ? item.path.split(':', 2) : ['common', item.path]
+    const fileContext = fileName.substring(fileName.lastIndexOf('/') + 1, fileName.lastIndexOf('.'));
+    if (ctx === fileContext) {
+      return key
+    }
+  }
+
+  return undefined
+}
+
 export function writeMissingToLanguageFiles (parsedLanguageFiles: SimpleFile[], missingKeys: I18NItem[], dot: DotObject.Dot = Dot): void {
   parsedLanguageFiles.forEach(languageFile => {
     const languageFileContent = JSON.parse(languageFile.content);
 
     missingKeys.forEach(item => {
-      if (item.language && languageFile.fileName.includes(item.language) || !item.language) {
-        dot.str(item.path, '', languageFileContent);
+      const key = setKeyForFile(languageFile.fileName, item)
+      if (key) {
+        dot.str(key, '', languageFileContent);
       }
     });
 

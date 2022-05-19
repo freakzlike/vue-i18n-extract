@@ -92,7 +92,12 @@ export function extractI18NItemsFromVueFiles (sourceFiles: SimpleFile[]): I18NIt
       ...methodMatches,
       ...componentMatches,
       ...directiveMatches,
-    ];
+    ].map(item => {
+      if (!item.path.includes(':')) {
+        item.path = ['common', item.path].join(':')
+      }
+      return item
+    });
   }, [] as I18NItemWithBounding[]);
 }
 
